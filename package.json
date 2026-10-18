@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "node --test tests/quality.test.js tests/responsive.test.js",
+    "test": "node --test tests/quality.test.js tests/responsive.test.js tests/bulk-add.test.js",
     "preview": "vite preview",
     "deploy": "tsc -b && vite build && git add -f dist && TREE_ID=$(git write-tree --prefix=dist) && COMMIT_ID=$(git commit-tree $TREE_ID -m 'deploy: update gh-pages') && git push origin $COMMIT_ID:refs/heads/gh-pages --force && git reset HEAD dist"
 

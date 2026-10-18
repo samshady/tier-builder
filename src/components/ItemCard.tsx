@@ -38,10 +38,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onDelete, isOverlay = 
       ref={setNodeRef}
       style={style}
       className={`relative group flex items-center justify-center select-none rounded-lg overflow-hidden border border-[#313244] bg-[#181825] transition-shadow duration-150 touch-manipulation ${
+        isOverlay ? 'z-50 ring-2 ring-[#cba6f7]' : 'hover:border-[#585b70] animate-pop-in'
+      } ${
         item.type === 'image'
           ? 'w-20 h-20 md:w-24 md:h-24'
           : 'min-w-[116px] md:min-w-[130px] h-20 md:h-24 px-2.5'
-      } ${isOverlay ? 'z-50 ring-2 ring-[#cba6f7]' : 'hover:border-[#585b70]'}`}
+      }`}
+
 
     >
       {/* Drag Surface */}
