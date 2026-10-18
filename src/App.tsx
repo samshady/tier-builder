@@ -55,14 +55,16 @@ export const App: React.FC = () => {
       // Check if URL hash contains a shared board
       const hash = window.location.hash;
       if (hash && hash.includes('tier=')) {
-        const hashPayload = hash.split('tier=')[1];
-        const sharedBoard = decodeBoardFromUrlHash(hashPayload);
-        if (sharedBoard) {
-          setBoard(sharedBoard);
-          await db.boards.put(sharedBoard);
-          const all = await db.boards.toArray();
-          setSavedBoards(all);
-          return;
+        const hashPayload = hash.split('tier=')[1]?.split('&')[0];
+        if (hashPayload) {
+          const sharedBoard = decodeBoardFromUrlHash(hashPayload);
+          if (sharedBoard) {
+            setBoard(sharedBoard);
+            await db.boards.put(sharedBoard);
+            const all = await db.boards.toArray();
+            setSavedBoards(all);
+            return;
+          }
         }
       }
 
@@ -71,7 +73,15 @@ export const App: React.FC = () => {
       const all = await db.boards.toArray();
       setSavedBoards(all);
     }
+
     loadData();
+
+    const handleHashChange = () => {
+      loadData();
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // Save changes to IndexedDB when board updates
