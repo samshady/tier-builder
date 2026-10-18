@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Rounded Base Badge -->
+  <rect width="64" height="64" rx="14" fill="#181825" stroke="#313244" stroke-width="2"/>
+  
+  <!-- Tier 1 (S - Rose) -->
+  <rect x="12" y="12" width="40" height="8" rx="3" fill="#f38ba8"/>
+  
+  <!-- Tier 2 (A - Peach) -->
+  <rect x="12" y="23" width="34" height="8" rx="3" fill="#fab387"/>
+  
+  <!-- Tier 3 (B - Amber) -->
+  <rect x="12" y="34" width="28" height="8" rx="3" fill="#f9e2af"/>
+  
+  <!-- Tier 4 (C - Emerald) -->
+  <rect x="12" y="45" width="22" height="8" rx="3" fill="#a6e3a1"/>
+</svg>
