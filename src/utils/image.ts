@@ -1,9 +1,18 @@
 /**
- * Client-side image compression using HTML Canvas.
- * Downscales images to max 384x384 WebP format to keep memory footprint light.
+ * Client-side image processor.
+ * Preserves animated GIFs intact; downscales other images to max 384x384 WebP.
  */
 export async function compressImageFile(file: File, maxDimension = 384): Promise<string> {
   return new Promise((resolve, reject) => {
+    // If the file is an animated GIF, do not draw to canvas (canvas destroys animation frames)
+    if (file.type === 'image/gif') {
+      const gifReader = new FileReader();
+      gifReader.onerror = () => reject(new Error('Failed to read GIF file'));
+      gifReader.onload = () => resolve(gifReader.result as string);
+      gifReader.readAsDataURL(file);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Failed to read image file'));
     reader.onload = (e) => {
@@ -34,7 +43,6 @@ export async function compressImageFile(file: File, maxDimension = 384): Promise
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to WebP or fallback to JPEG
         try {
           const webpData = canvas.toDataURL('image/webp', 0.88);
           resolve(webpData);
@@ -48,3 +56,4 @@ export async function compressImageFile(file: File, maxDimension = 384): Promise
     reader.readAsDataURL(file);
   });
 }
+
