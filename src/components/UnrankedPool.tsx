@@ -14,6 +14,8 @@ interface UnrankedPoolProps {
   onShufflePool: () => void;
   onClearPool: () => void;
   onDeleteItem: (itemId: string) => void;
+  onInspectItem?: (item: TierItem) => void;
+  expandAllText?: boolean;
   onStartGauntlet: () => void;
 }
 
@@ -25,6 +27,8 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
   onShufflePool,
   onClearPool,
   onDeleteItem,
+  onInspectItem,
+  expandAllText,
   onStartGauntlet,
 }) => {
 
@@ -316,7 +320,13 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
           strategy={rectSortingStrategy}
         >
           {filteredItems.map((item) => (
-            <ItemCard key={item.id} item={item} onDelete={onDeleteItem} />
+            <ItemCard
+              key={item.id}
+              item={item}
+              onDelete={onDeleteItem}
+              onInspect={onInspectItem}
+              expandAllText={expandAllText}
+            />
           ))}
         </SortableContext>
 

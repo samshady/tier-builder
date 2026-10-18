@@ -26,6 +26,7 @@ import { ItemCard } from './components/ItemCard';
 import { ExportModal } from './components/ExportModal';
 import { BoardsModal } from './components/BoardsModal';
 import { GauntletModal } from './components/GauntletModal';
+import { ItemDetailModal } from './components/ItemDetailModal';
 
 export const App: React.FC = () => {
   const [board, setBoard] = useState<Board | null>(null);
@@ -34,6 +35,8 @@ export const App: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isBoardsModalOpen, setIsBoardsModalOpen] = useState(false);
   const [isGauntletOpen, setIsGauntletOpen] = useState(false);
+  const [expandAllText, setExpandAllText] = useState(false);
+  const [inspectingItem, setInspectingItem] = useState<TierItem | null>(null);
 
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -328,6 +331,44 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleUpdateItem = (updatedItem: TierItem) => {
+    updateBoard({
+      ...board,
+      items: {
+        ...board.items,
+        [updatedItem.id]: updatedItem,
+      },
+    });
+    setInspectingItem(updatedItem);
+  };
+
+  const handleMoveItemToTier = (itemId: string, targetTierId: string) => {
+    const currentContainer = findContainer(itemId);
+    if (!currentContainer || currentContainer === targetTierId) return;
+
+    const newBoard = { ...board };
+
+    if (currentContainer === 'unranked-pool') {
+      newBoard.unrankedItemIds = newBoard.unrankedItemIds.filter((id) => id !== itemId);
+    } else {
+      const sourceTier = newBoard.tiers.find((t) => t.id === currentContainer);
+      if (sourceTier) {
+        sourceTier.itemIds = sourceTier.itemIds.filter((id) => id !== itemId);
+      }
+    }
+
+    if (targetTierId === 'unranked-pool') {
+      newBoard.unrankedItemIds.push(itemId);
+    } else {
+      const targetTier = newBoard.tiers.find((t) => t.id === targetTierId);
+      if (targetTier) {
+        targetTier.itemIds.push(itemId);
+      }
+    }
+
+    updateBoard(newBoard);
+  };
+
   const handleResetAllItems = () => {
     if (!confirm('Return all ranked items to the unranked pool?')) return;
     const allRanked = board.tiers.flatMap((t) => t.itemIds);
@@ -398,6 +439,8 @@ export const App: React.FC = () => {
         onOpenExportModal={() => setIsExportModalOpen(true)}
         onStartGauntlet={() => setIsGauntletOpen(true)}
         unrankedCount={board.unrankedItemIds.length}
+        expandAllText={expandAllText}
+        onToggleExpandAllText={() => setExpandAllText(!expandAllText)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 flex flex-col gap-6">
@@ -430,6 +473,8 @@ export const App: React.FC = () => {
                   onClearTier={handleClearTier}
                   onMoveTier={handleMoveTier}
                   onDeleteItem={handleDeleteItem}
+                  onInspectItem={(item) => setInspectingItem(item)}
+                  expandAllText={expandAllText}
                   isFirst={idx === 0}
                   isLast={idx === board.tiers.length - 1}
                 />
@@ -459,6 +504,8 @@ export const App: React.FC = () => {
             onShufflePool={handleShufflePool}
             onClearPool={handleClearPool}
             onDeleteItem={handleDeleteItem}
+            onInspectItem={(item) => setInspectingItem(item)}
+            expandAllText={expandAllText}
             onStartGauntlet={() => setIsGauntletOpen(true)}
           />
 
@@ -517,6 +564,19 @@ export const App: React.FC = () => {
           tiers={board.tiers}
           onApplyRanking={handleApplyGauntletRanking}
           onClose={() => setIsGauntletOpen(false)}
+        />
+      )}
+
+      {inspectingItem && (
+        <ItemDetailModal
+          isOpen={Boolean(inspectingItem)}
+          item={inspectingItem}
+          tiers={board.tiers}
+          currentTierId={findContainer(inspectingItem.id) || 'unranked-pool'}
+          onClose={() => setInspectingItem(null)}
+          onSave={handleUpdateItem}
+          onDeleteItem={handleDeleteItem}
+          onMoveToTier={handleMoveItemToTier}
         />
       )}
 

@@ -15,6 +15,8 @@ interface TierRowProps {
   onClearTier: (tierId: string) => void;
   onMoveTier: (tierId: string, direction: 'up' | 'down') => void;
   onDeleteItem: (itemId: string) => void;
+  onInspectItem?: (item: TierItem) => void;
+  expandAllText?: boolean;
   isFirst: boolean;
   isLast: boolean;
 }
@@ -27,6 +29,8 @@ export const TierRow: React.FC<TierRowProps> = ({
   onClearTier,
   onMoveTier,
   onDeleteItem,
+  onInspectItem,
+  expandAllText,
   isFirst,
   isLast,
 }) => {
@@ -129,7 +133,13 @@ export const TierRow: React.FC<TierRowProps> = ({
       >
         <SortableContext items={tier.itemIds} strategy={horizontalListSortingStrategy}>
           {items.map((item) => (
-            <ItemCard key={item.id} item={item} onDelete={onDeleteItem} />
+            <ItemCard
+              key={item.id}
+              item={item}
+              onDelete={onDeleteItem}
+              onInspect={onInspectItem}
+              expandAllText={expandAllText}
+            />
           ))}
         </SortableContext>
 

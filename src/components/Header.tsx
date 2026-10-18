@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Layers, Share2, Plus, RotateCcw, Edit2, Sparkles } from 'lucide-react';
+import { Layers, Share2, Plus, RotateCcw, Edit2, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
 import type { Board } from '../types';
-
 
 interface HeaderProps {
   board: Board;
@@ -12,6 +11,8 @@ interface HeaderProps {
   onOpenExportModal: () => void;
   onStartGauntlet: () => void;
   unrankedCount: number;
+  expandAllText: boolean;
+  onToggleExpandAllText: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +24,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExportModal,
   onStartGauntlet,
   unrankedCount,
+  expandAllText,
+  onToggleExpandAllText,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(board.title);
@@ -110,6 +113,30 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Plus className="w-4 h-4 text-[#a6e3a1]" />
             <span>Add Tier</span>
+          </button>
+
+          {/* Toggle Expand Full Text */}
+          <button
+            type="button"
+            onClick={onToggleExpandAllText}
+            title={expandAllText ? 'Switch to compact cards' : 'Show full text on all cards'}
+            className={`tactile-btn text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors border ${
+              expandAllText
+                ? 'bg-[#cba6f7]/20 text-[#cba6f7] border-[#cba6f7]'
+                : 'bg-[#1e1e2e] hover:bg-[#313244] text-[#cdd6f4] border-[#313244]'
+            }`}
+          >
+            {expandAllText ? (
+              <>
+                <Minimize2 className="w-4 h-4 text-[#cba6f7]" />
+                <span className="hidden sm:inline">Compact Cards</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-4 h-4 text-[#89b4fa]" />
+                <span className="hidden sm:inline">Expand Text</span>
+              </>
+            )}
           </button>
 
           {/* Reset All */}
