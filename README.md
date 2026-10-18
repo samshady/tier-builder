@@ -1,6 +1,10 @@
 # TierCraft: Modern Local-First Tier List Maker
 
-A fast, tactile, client-side tier list maker designed for modern web browsers and hostable 100% on GitHub Pages. Built with Vite, React, TypeScript, Tailwind CSS, and `@dnd-kit`.
+> **Live Application:** [https://samshady.github.io/tier-builder/](https://samshady.github.io/tier-builder/)  
+> **Source Repository:** [https://github.com/samshady/tier-builder](https://github.com/samshady/tier-builder)
+
+A fast, tactile, client-side tier list maker designed for modern web browsers and hosted on GitHub Pages. Built with Vite, React, TypeScript, Tailwind CSS, and `@dnd-kit`.
+
 
 ## Key Features
 
