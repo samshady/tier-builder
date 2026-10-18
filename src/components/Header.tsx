@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
             <p className="text-xs text-[#a6adc8] hidden sm:block">
-              Rank and organize favorites with custom tiers, 1v1 gauntlet choices, and Retina exports.
+              Rank and organize favorites with custom tiers, 1v1 gauntlet choices, and crisp high-resolution exports.
             </p>
 
           </div>

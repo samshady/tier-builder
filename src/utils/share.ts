@@ -79,7 +79,7 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
 }
 
 /**
- * Exports DOM node to a crisp Retina PNG file.
+ * Exports DOM node to a crisp high-resolution PNG image file.
  */
 export async function exportBoardToPng(element: HTMLElement, fileName: string): Promise<string> {
   const dataUrl = await toPng(element, {

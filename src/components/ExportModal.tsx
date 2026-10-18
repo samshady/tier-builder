@@ -64,7 +64,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         <div className="flex flex-col gap-3">
-          {/* Retina PNG Download */}
+          {/* High-Res PNG Download */}
           <button
             type="button"
             onClick={handleDownloadPng}
@@ -77,7 +77,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </div>
               <div>
                 <div className="font-display font-bold text-sm text-[#cdd6f4]">
-                  Download 2x Retina PNG
+                  Download High-Res PNG
                 </div>
                 <div className="text-xs text-[#6c7086]">
                   Pixel-perfect image for Twitter, Discord, and Reddit
