@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-base: #1e1e2e;
+    --bg-mantle: #181825;
+    --bg-crust: #11111b;
+    --bg-surface0: #313244;
+    --bg-surface1: #45475a;
+    --border-subtle: #313244;
+    --border-strong: #585b70;
+
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-muted: #6c7086;
+
+    --accent-mauve: #cba6f7;
+    --accent-peach: #fab387;
+    --accent-emerald: #a6e3a1;
+    --accent-sky: #89b4fa;
+    --accent-amber: #f9e2af;
+    --accent-rose: #f38ba8;
+
+    --font-heading: 'Bricolage Grotesque', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-mantle);
+    color: var(--text-primary);
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-heading);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tactile-btn {
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tactile-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.tactile-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-crust);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface0);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
