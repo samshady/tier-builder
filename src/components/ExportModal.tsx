@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { Download, Link2, FileJson, Check, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Download, Link2, FileJson, Check, X, Sparkles } from 'lucide-react';
 import type { Board } from '../types';
-import { exportBoardToPng, exportBoardToJson, encodeBoardToUrlHash } from '../utils/share';
-
+import { exportBoardToPng, exportBoardToJson, encodeBoardToUrlHash, shortenUrl } from '../utils/share';
 
 interface ExportModalProps {
   board: Board;
@@ -17,6 +16,17 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [isShortening, setIsShortening] = useState(false);
+  const [copiedShort, setCopiedShort] = useState(false);
+
+  // Compute compact direct URL
+  const directShareUrl = useMemo(() => {
+    const hash = encodeBoardToUrlHash(board);
+    const url = new URL(window.location.href);
+    url.hash = `tier=${hash}`;
+    return url.toString();
+  }, [board]);
 
   const handleDownloadPng = async () => {
     if (!boardElementRef.current) return;
@@ -30,13 +40,41 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }
   };
 
-  const handleCopyShareLink = () => {
-    const hash = encodeBoardToUrlHash(board);
-    const url = new URL(window.location.href);
-    url.hash = `tier=${hash}`;
-    navigator.clipboard.writeText(url.toString());
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(directShareUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleCreateShortLink = async () => {
+    if (shortUrl) {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopiedShort(true);
+      setTimeout(() => setCopiedShort(false), 2500);
+      return;
+    }
+
+    setIsShortening(true);
+    try {
+      const result = await shortenUrl(directShareUrl);
+      if (result) {
+        setShortUrl(result);
+        await navigator.clipboard.writeText(result);
+        setCopiedShort(true);
+        setTimeout(() => setCopiedShort(false), 2500);
+      } else {
+        // Fallback to direct link if offline
+        await handleCopyShareLink();
+      }
+    } catch {
+      await handleCopyShareLink();
+    } finally {
+      setIsShortening(false);
+    }
   };
 
   const handleDownloadJson = () => {
@@ -89,29 +127,59 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </span>
           </button>
 
-          {/* Copy Shareable URL */}
-          <button
-            type="button"
-            onClick={handleCopyShareLink}
-            className="tactile-btn p-4 bg-[#181825] hover:bg-[#313244] border border-[#313244] hover:border-[#89b4fa] rounded-xl flex items-center justify-between text-left transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#89b4fa]/20 text-[#89b4fa] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                {copiedLink ? <Check className="w-5 h-5 text-[#a6e3a1]" /> : <Link2 className="w-5 h-5" />}
-              </div>
-              <div>
-                <div className="font-display font-bold text-sm text-[#cdd6f4]">
-                  Copy Shareable URL
+          {/* Copy Compact Shareable URL */}
+          <div className="p-4 bg-[#181825] border border-[#313244] hover:border-[#89b4fa] rounded-xl flex flex-col gap-3 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#89b4fa]/20 text-[#89b4fa] flex items-center justify-center flex-shrink-0">
+                  <Link2 className="w-5 h-5" />
                 </div>
-                <div className="text-xs text-[#6c7086]">
-                  State is compressed into the URL hash, no server required
+                <div>
+                  <div className="font-display font-bold text-sm text-[#cdd6f4] flex items-center gap-2">
+                    <span>Shareable URL</span>
+                    <span className="text-[10px] font-mono text-[#a6e3a1] bg-[#a6e3a1]/10 px-1.5 py-0.5 rounded">
+                      {directShareUrl.length} chars
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#6c7086]">
+                    Compressed client-side hash, 100% serverless
+                  </div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={handleCopyShareLink}
+                className="tactile-btn font-mono text-xs text-[#89b4fa] hover:text-[#b4befe] px-3 py-1.5 bg-[#89b4fa]/10 hover:bg-[#89b4fa]/20 rounded-lg flex items-center gap-1 transition-colors"
+              >
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-[#a6e3a1]" /> : null}
+                <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
+              </button>
             </div>
-            <span className="font-mono text-xs text-[#89b4fa] px-2 py-1 bg-[#89b4fa]/10 rounded">
-              {copiedLink ? 'Copied to Clipboard' : 'Copy Link'}
-            </span>
-          </button>
+
+            {/* Quick Short Link Generator */}
+            <div className="pt-2 border-t border-[#313244]/60 flex items-center justify-between text-xs">
+              <span className="text-[#6c7086]">Want a short 20-character link?</span>
+              <button
+                type="button"
+                onClick={handleCreateShortLink}
+                disabled={isShortening}
+                className="tactile-btn text-xs font-semibold px-2.5 py-1 text-[#cba6f7] hover:text-white bg-[#cba6f7]/10 hover:bg-[#cba6f7]/30 border border-[#cba6f7]/30 rounded-lg flex items-center gap-1 transition-colors"
+              >
+                {copiedShort ? (
+                  <>
+                    <Check className="w-3 h-3 text-[#a6e3a1]" />
+                    <span className="text-[#a6e3a1]">Copied Short Link</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3 text-[#cba6f7]" />
+                    <span>{isShortening ? 'Shortening...' : shortUrl ? 'Copy Short Link' : 'Generate Short Link'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* JSON Backup */}
           <button
