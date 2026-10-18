@@ -41,4 +41,19 @@ test('Verify text cards specify safe minimum width to prevent word clipping', ()
     itemCardTsx.includes('min-w-[116px]'),
     'Text cards must have min-width of at least 116px to prevent truncating long words like TypeScript'
   );
+  assert.ok(
+    itemCardTsx.includes('isTextExpanded'),
+    'Text cards must support expansion state for long text'
+  );
+  assert.ok(
+    itemCardTsx.includes('group-hover:opacity-100'),
+    'Must include hover tooltip preview for truncated text'
+  );
+});
+
+test('Verify ItemDetailModal exists and provides full text inspection and editing', () => {
+  const modalTsx = fs.readFileSync(path.resolve('src/components/ItemDetailModal.tsx'), 'utf8');
+  assert.ok(modalTsx.includes('Full Title / Content'), 'Modal must display full unabridged title');
+  assert.ok(modalTsx.includes('handleCopyText'), 'Modal must support copying text');
+  assert.ok(modalTsx.includes('onMoveToTier'), 'Modal must support quick moving across tiers');
 });
