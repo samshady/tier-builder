@@ -167,7 +167,8 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
               placeholder="Type option and hit Enter..."
               value={quickAddInput}
               onChange={(e) => setQuickAddInput(e.target.value)}
-              className="bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-xs text-[#cdd6f4] rounded-lg px-3 py-2 outline-none w-44 sm:w-52 transition-colors"
+              className="bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-xs text-[#cdd6f4] rounded-lg px-3 py-2 outline-none w-full sm:w-52 transition-colors"
+
             />
             <button
               type="submit"

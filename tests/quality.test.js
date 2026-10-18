@@ -61,7 +61,14 @@ test('Verify required font links exist in index.html', () => {
   assert.ok(indexHtml.includes('JetBrains+Mono'), 'Missing JetBrains Mono font link');
 });
 
+test('Verify favicon.svg exists and is referenced in index.html', () => {
+  assert.ok(fs.existsSync(path.resolve('public/favicon.svg')), 'public/favicon.svg must exist');
+  const indexHtml = fs.readFileSync(path.resolve('index.html'), 'utf8');
+  assert.ok(indexHtml.includes('favicon.svg'), 'index.html must reference favicon.svg');
+});
+
 test('Verify relative base path configured in vite.config.ts for GitHub Pages', () => {
   const viteConfig = fs.readFileSync(path.resolve('vite.config.ts'), 'utf8');
   assert.ok(viteConfig.includes("base: './'"), 'Vite config must have relative base for GitHub Pages');
 });
+
