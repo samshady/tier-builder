@@ -31,3 +31,22 @@ test('Verify v2 encoding is at least 70% smaller than legacy hash', () => {
   assert.strictEqual(Object.keys(decoded.items).length, 49);
   assert.strictEqual(decoded.items[decoded.unrankedItemIds[0]].title, "Rock n' Roll");
 });
+
+test('Verify decoder resilience against query params, trailing slashes, and spaces', () => {
+  const board = decodeBoardFromUrlHash(USER_LEGACY_HASH);
+  assert.ok(board !== null);
+
+  const v2Hash = encodeBoardToUrlHash(board);
+
+  // Hash with query parameters appended
+  const withParams = `${v2Hash}&source=twitter&utm_medium=social/`;
+  const decodedParams = decodeBoardFromUrlHash(withParams);
+  assert.ok(decodedParams !== null, 'Must decode despite query parameters and trailing slash');
+  assert.strictEqual(decodedParams.title, 'Rock&Metal');
+
+  // Legacy hash where '+' was turned into space ' ' by a parser
+  const spacedLegacy = USER_LEGACY_HASH.replace(/\+/g, ' ');
+  const decodedSpaced = decodeBoardFromUrlHash(spacedLegacy);
+  assert.ok(decodedSpaced !== null, 'Must decode legacy hash even if plus characters were parsed as spaces');
+  assert.strictEqual(decodedSpaced.title, 'Rock&Metal');
+});

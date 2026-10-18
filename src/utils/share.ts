@@ -133,9 +133,16 @@ export function encodeBoardToUrlHash(board: Board): string {
  */
 export function decodeBoardFromUrlHash(hash: string): Board | null {
   try {
+    let clean = hash.trim().split('&')[0].replace(/\/+$/, '');
+    try {
+      clean = decodeURIComponent(clean);
+    } catch {
+      // Ignore malformed URI sequence and keep raw string
+    }
+
     // Modern v2 format with fflate
-    if (hash.startsWith('v2.')) {
-      const raw = hash.slice(3);
+    if (clean.startsWith('v2.')) {
+      const raw = clean.slice(3);
       const bytes = base64UrlToU8(raw);
       const decompressed = fflate.inflateSync(bytes);
       const payload = JSON.parse(fflate.strFromU8(decompressed));
@@ -144,7 +151,7 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
       const itemIds: string[] = [];
 
       payload.k.forEach((entry: any, idx: number) => {
-        const id = `item-${idx}-${Date.now().toString(36)}`;
+        const id = `item-${idx}-${Math.random().toString(36).substring(2, 7)}`;
         itemIds.push(id);
 
         if (typeof entry === 'string') {
@@ -170,7 +177,7 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
 
       let tiers: Tier[] = [];
 
-      if (!payload.r) {
+      if (!payload.r || payload.r.length === 0) {
         // Default empty tiers
         tiers = DEFAULT_TIER_LABELS.map((label, idx) => ({
           id: `tier-${label.toLowerCase()}`,
@@ -178,7 +185,11 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
           color: DEFAULT_TIER_COLORS[idx],
           itemIds: [],
         }));
-      } else if (payload.r.length > 0 && Array.isArray(payload.r[0]) && (payload.r[0].length === 0 || typeof payload.r[0][0] === 'number')) {
+      } else if (
+        payload.r.length > 0 &&
+        Array.isArray(payload.r[0]) &&
+        (payload.r[0].length === 0 || typeof payload.r[0][0] === 'number')
+      ) {
         // Standard tiers with item indices
         tiers = DEFAULT_TIER_LABELS.map((label, idx) => ({
           id: `tier-${label.toLowerCase()}`,
@@ -191,7 +202,7 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
       } else {
         // Custom tiers: [label, color, indices]
         tiers = (payload.r as [string, string, number[]][]).map((t, idx) => ({
-          id: `tier-${idx}-${Date.now().toString(36)}`,
+          id: `tier-${idx}-${Math.random().toString(36).substring(2, 7)}`,
           label: t[0],
           color: t[1],
           itemIds: (t[2] || []).map((i) => itemIds[i]).filter(Boolean),
@@ -219,7 +230,10 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
     }
 
     // Legacy v1 format with LZString
-    const jsonStr = LZString.decompressFromEncodedURIComponent(hash);
+    let jsonStr = LZString.decompressFromEncodedURIComponent(clean);
+    if (!jsonStr && clean.includes(' ')) {
+      jsonStr = LZString.decompressFromEncodedURIComponent(clean.replace(/ /g, '+'));
+    }
     if (!jsonStr) return null;
 
     const payload = JSON.parse(jsonStr);
@@ -243,7 +257,7 @@ export function decodeBoardFromUrlHash(hash: string): Board | null {
       id: `shared-${Date.now()}`,
       title: payload.t || 'Shared Tier List',
       author: payload.a || 'Curator',
-      tiers: payload.r.map((tier: any) => ({
+      tiers: (payload.r || []).map((tier: any) => ({
         id: tier.i,
         label: tier.l,
         color: tier.c,
