@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
-import { Search, Plus, Upload, Shuffle, Trash, Sparkles } from 'lucide-react';
+import { Search, Plus, Upload, Shuffle, Trash, Sparkles, Link, ListPlus } from 'lucide-react';
 import type { TierItem } from '../types';
-
 import { ItemCard } from './ItemCard';
 import { compressImageFile } from '../utils/image';
 
@@ -27,17 +26,54 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
   onStartGauntlet,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddTextModal, setShowAddTextModal] = useState(false);
-  const [textTitle, setTextTitle] = useState('');
-  const [textTag, setTextTag] = useState('');
-  const [textColor, setTextColor] = useState('#cba6f7');
+  const [quickAddInput, setQuickAddInput] = useState('');
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchText, setBatchText] = useState('');
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageTitleInput, setImageTitleInput] = useState('');
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [isDragOverFiles, setIsDragOverFiles] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { setNodeRef, isOver } = useDroppable({
     id: 'unranked-pool',
   });
+
+  // Listen for clipboard image paste
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const clipboardItems = e.clipboardData?.items;
+      if (!clipboardItems) return;
+
+      const newImages: { title: string; imageUrl: string }[] = [];
+      for (let i = 0; i < clipboardItems.length; i++) {
+        const item = clipboardItems[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            try {
+              const compressed = await compressImageFile(file);
+              newImages.push({
+                title: `Pasted Image ${Date.now()}`,
+                imageUrl: compressed,
+              });
+            } catch (err) {
+              console.error('Failed to parse pasted image:', err);
+            }
+          }
+        }
+      }
+
+      if (newImages.length > 0) {
+        onAddImageItems(newImages);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [onAddImageItems]);
 
   const filteredItems = items.filter((item) => {
     if (!searchQuery.trim()) return true;
@@ -48,8 +84,7 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
     );
   });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const handleFileUpload = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
     setIsProcessingImages(true);
@@ -57,15 +92,16 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (!file.type.startsWith('image/')) continue;
       try {
-        const compressed = await compressImageFile(file);
+        const processed = await compressImageFile(file);
         const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
         newItems.push({
           title: nameWithoutExt,
-          imageUrl: compressed,
+          imageUrl: processed,
         });
       } catch (err) {
-        console.error('Failed to compress image:', file.name, err);
+        console.error('Failed to process image:', file.name, err);
       }
     }
 
@@ -77,13 +113,36 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleTextSubmit = (e: React.FormEvent) => {
+  const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!textTitle.trim()) return;
-    onAddTextItem(textTitle.trim(), textTag.trim() || undefined, textColor);
-    setTextTitle('');
-    setTextTag('');
-    setShowAddTextModal(false);
+    if (!quickAddInput.trim()) return;
+    onAddTextItem(quickAddInput.trim());
+    setQuickAddInput('');
+  };
+
+  const handleBatchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const lines = batchText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    lines.forEach((line) => {
+      onAddTextItem(line);
+    });
+
+    setBatchText('');
+    setShowBatchModal(false);
+  };
+
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imageUrlInput.trim()) return;
+    const title = imageTitleInput.trim() || 'Web Image';
+    onAddImageItems([{ title, imageUrl: imageUrlInput.trim() }]);
+    setImageUrlInput('');
+    setImageTitleInput('');
+    setShowUrlModal(false);
   };
 
   return (
@@ -101,46 +160,77 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
 
         {/* Action Buttons Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search bar */}
-          <div className="relative flex-1 sm:flex-initial sm:w-48 md:w-56">
-            <Search className="w-4 h-4 text-[#6c7086] absolute left-3 top-1/2 -translate-y-1/2" />
+          {/* Quick inline text adder */}
+          <form onSubmit={handleQuickAdd} className="flex items-center gap-1 flex-1 sm:flex-initial">
             <input
               type="text"
-              placeholder="Filter items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-xs text-[#cdd6f4] rounded-lg pl-9 pr-3 py-2 outline-none transition-colors"
+              placeholder="Type option and hit Enter..."
+              value={quickAddInput}
+              onChange={(e) => setQuickAddInput(e.target.value)}
+              className="bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-xs text-[#cdd6f4] rounded-lg px-3 py-2 outline-none w-44 sm:w-52 transition-colors"
             />
-          </div>
+            <button
+              type="submit"
+              disabled={!quickAddInput.trim()}
+              title="Add text card"
+              className="tactile-btn p-2 bg-[#a6e3a1] hover:bg-[#94e2d5] text-[#11111b] rounded-lg disabled:opacity-30 disabled:hover:bg-[#a6e3a1]"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </form>
 
-          {/* Add Text Card */}
+          {/* Batch Text Add */}
           <button
             type="button"
-            onClick={() => setShowAddTextModal(true)}
-            className="tactile-btn text-xs font-semibold px-3 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg border border-[#45475a] flex items-center gap-1.5"
+            onClick={() => setShowBatchModal(true)}
+            title="Batch add multiple text options"
+            className="tactile-btn text-xs font-semibold px-2.5 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg border border-[#45475a] flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4 text-[#a6e3a1]" />
-            <span>Add Text</span>
+            <ListPlus className="w-4 h-4 text-[#fab387]" />
+            <span className="hidden sm:inline">Bulk Text</span>
           </button>
 
-          {/* Upload Images */}
+          {/* Upload Images & GIFs */}
           <input
             type="file"
             ref={fileInputRef}
-            onChange={handleFileUpload}
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
             multiple
-            accept="image/*"
+            accept="image/*,.gif,.webp"
             className="hidden"
           />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isProcessingImages}
+            title="Upload images or animated GIFs"
             className="tactile-btn text-xs font-semibold px-3 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg border border-[#45475a] flex items-center gap-1.5 disabled:opacity-50"
           >
             <Upload className="w-4 h-4 text-[#89b4fa]" />
-            <span>{isProcessingImages ? 'Optimizing...' : 'Upload Images'}</span>
+            <span>{isProcessingImages ? 'Processing...' : 'Upload Images/GIFs'}</span>
           </button>
+
+          {/* Add Image/GIF via URL */}
+          <button
+            type="button"
+            onClick={() => setShowUrlModal(true)}
+            title="Add image or GIF from web link"
+            className="tactile-btn p-2 bg-[#313244] hover:bg-[#45475a] text-[#a6adc8] hover:text-[#cdd6f4] rounded-lg border border-[#45475a]"
+          >
+            <Link className="w-4 h-4" />
+          </button>
+
+          {/* Search bar */}
+          <div className="relative w-36 sm:w-44">
+            <Search className="w-3.5 h-3.5 text-[#6c7086] absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Filter..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-xs text-[#cdd6f4] rounded-lg pl-8 pr-2.5 py-2 outline-none transition-colors"
+            />
+          </div>
 
           {/* 1v1 Gauntlet Mode */}
           {items.length >= 2 && (
@@ -178,15 +268,38 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
         </div>
       </div>
 
-      {/* Droppable Unranked Card Grid */}
+      {/* Droppable Unranked Card Grid with File Drop Support */}
       <div
         ref={setNodeRef}
-        className={`min-h-[140px] p-3 md:p-4 rounded-xl border border-dashed transition-colors flex flex-wrap content-start items-center gap-2.5 ${
-          isOver
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes('Files')) {
+            e.preventDefault();
+            setIsDragOverFiles(true);
+          }
+        }}
+        onDragLeave={() => setIsDragOverFiles(false)}
+        onDrop={(e) => {
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            e.preventDefault();
+            setIsDragOverFiles(false);
+            handleFileUpload(e.dataTransfer.files);
+          }
+        }}
+        className={`min-h-[140px] p-3 md:p-4 rounded-xl border border-dashed transition-all flex flex-wrap content-start items-center gap-2.5 relative ${
+          isDragOverFiles
+            ? 'border-[#a6e3a1] bg-[#a6e3a1]/10'
+            : isOver
             ? 'border-[#cba6f7] bg-[#313244]/40'
             : 'border-[#313244] bg-[#181825]/60'
         }`}
       >
+        {isDragOverFiles && (
+          <div className="absolute inset-0 bg-[#181825]/90 rounded-xl z-30 flex flex-col items-center justify-center gap-2 text-[#a6e3a1]">
+            <Upload className="w-8 h-8 animate-bounce" />
+            <span className="font-display font-bold text-sm">Drop images or GIFs here</span>
+          </div>
+        )}
+
         <SortableContext
           items={filteredItems.map((item) => item.id)}
           strategy={rectSortingStrategy}
@@ -201,7 +314,7 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
             <Upload className="w-8 h-8 opacity-40" />
             <p className="text-sm font-medium">No items in the pool</p>
             <p className="text-xs text-[#a6adc8]">
-              Upload photos or add custom text cards to start ranking
+              Type options above, upload images/GIFs, or paste images directly with Ctrl+V.
             </p>
           </div>
         )}
@@ -213,70 +326,95 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
         )}
       </div>
 
-      {/* Add Text Item Modal */}
-      {showAddTextModal && (
+      {/* Bulk Text Add Modal */}
+      {showBatchModal && (
         <div className="fixed inset-0 z-50 bg-[#11111b]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1e1e2e] border border-[#313244] rounded-2xl p-6 w-full max-w-md shadow-2xl flex flex-col gap-4">
+          <div className="bg-[#1e1e2e] border border-[#313244] rounded-2xl p-6 w-full max-w-lg shadow-2xl flex flex-col gap-4">
             <h3 className="font-display font-bold text-xl text-[#cdd6f4]">
-              Create Text Card
+              Bulk Add Options
             </h3>
-            <form onSubmit={handleTextSubmit} className="flex flex-col gap-3">
-              <div>
-                <label className="text-xs text-[#a6adc8] font-medium block mb-1">
-                  Title or Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Next.js, Espresso, Elden Ring"
-                  value={textTitle}
-                  onChange={(e) => setTextTitle(e.target.value)}
-                  autoFocus
-                  required
-                  className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-sm text-[#cdd6f4] rounded-lg px-3 py-2 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-[#a6adc8] font-medium block mb-1">
-                  Category Tag (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Framework, Coffee, RPG"
-                  value={textTag}
-                  onChange={(e) => setTextTag(e.target.value)}
-                  className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-sm text-[#cdd6f4] rounded-lg px-3 py-2 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-[#a6adc8] font-medium block mb-1">
-                  Accent Color
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    className="w-10 h-8 cursor-pointer bg-transparent rounded"
-                  />
-                  <span className="font-mono text-xs text-[#6c7086]">{textColor}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-[#313244]">
+            <p className="text-xs text-[#a6adc8]">
+              Paste your list of options below. Each line will become an individual card to rate.
+            </p>
+            <form onSubmit={handleBatchSubmit} className="flex flex-col gap-3">
+              <textarea
+                rows={6}
+                placeholder="Python&#10;TypeScript&#10;Rust&#10;Go&#10;Zig"
+                value={batchText}
+                onChange={(e) => setBatchText(e.target.value)}
+                autoFocus
+                required
+                className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-sm text-[#cdd6f4] rounded-lg p-3 outline-none font-mono"
+              />
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#313244]">
                 <button
                   type="button"
-                  onClick={() => setShowAddTextModal(false)}
+                  onClick={() => setShowBatchModal(false)}
                   className="tactile-btn text-xs font-semibold px-4 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="tactile-btn text-xs font-semibold px-4 py-2 bg-[#cba6f7] hover:bg-[#b4befe] text-[#11111b] rounded-lg"
+                  className="tactile-btn text-xs font-semibold px-4 py-2 bg-[#a6e3a1] hover:bg-[#94e2d5] text-[#11111b] rounded-lg font-bold"
                 >
-                  Add Card
+                  Add All Options
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add by URL Modal */}
+      {showUrlModal && (
+        <div className="fixed inset-0 z-50 bg-[#11111b]/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1e1e2e] border border-[#313244] rounded-2xl p-6 w-full max-w-md shadow-2xl flex flex-col gap-4">
+            <h3 className="font-display font-bold text-xl text-[#cdd6f4]">
+              Add Image or GIF via Link
+            </h3>
+            <form onSubmit={handleUrlSubmit} className="flex flex-col gap-3">
+              <div>
+                <label className="text-xs text-[#a6adc8] font-medium block mb-1">
+                  Image or GIF URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/animation.gif"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  autoFocus
+                  required
+                  className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-sm text-[#cdd6f4] rounded-lg px-3 py-2 outline-none font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-[#a6adc8] font-medium block mb-1">
+                  Title (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Dancing Cat"
+                  value={imageTitleInput}
+                  onChange={(e) => setImageTitleInput(e.target.value)}
+                  className="w-full bg-[#181825] border border-[#313244] focus:border-[#cba6f7] text-sm text-[#cdd6f4] rounded-lg px-3 py-2 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#313244]">
+                <button
+                  type="button"
+                  onClick={() => setShowUrlModal(false)}
+                  className="tactile-btn text-xs font-semibold px-4 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="tactile-btn text-xs font-semibold px-4 py-2 bg-[#cba6f7] hover:bg-[#b4befe] text-[#11111b] rounded-lg font-bold"
+                >
+                  Add Media
                 </button>
               </div>
             </form>
