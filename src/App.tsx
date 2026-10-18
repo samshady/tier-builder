@@ -246,7 +246,6 @@ export const App: React.FC = () => {
     updateBoard({ ...board, tiers: [...board.tiers, newTier] });
   };
 
-  // Item operations
   const handleAddTextItem = (title: string, tag?: string, color?: string) => {
     const id = `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const newItem: TierItem = {
@@ -263,6 +262,30 @@ export const App: React.FC = () => {
       unrankedItemIds: [id, ...board.unrankedItemIds],
     });
   };
+
+  const handleAddTextItems = (titles: string[]) => {
+    const newItems: Record<string, TierItem> = { ...board.items };
+    const newIds: string[] = [];
+
+    titles.forEach((title) => {
+      const id = `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      newItems[id] = {
+        id,
+        type: 'text',
+        title,
+        color: '#cba6f7',
+        createdAt: Date.now(),
+      };
+      newIds.push(id);
+    });
+
+    updateBoard({
+      ...board,
+      items: newItems,
+      unrankedItemIds: [...newIds, ...board.unrankedItemIds],
+    });
+  };
+
 
   const handleAddImageItems = (images: { title: string; imageUrl: string }[]) => {
     const newItems: Record<string, TierItem> = { ...board.items };
@@ -431,6 +454,7 @@ export const App: React.FC = () => {
           <UnrankedPool
             items={board.unrankedItemIds.map((id) => board.items[id]).filter(Boolean)}
             onAddTextItem={handleAddTextItem}
+            onAddTextItems={handleAddTextItems}
             onAddImageItems={handleAddImageItems}
             onShufflePool={handleShufflePool}
             onClearPool={handleClearPool}
@@ -496,9 +520,12 @@ export const App: React.FC = () => {
         />
       )}
 
-      <footer className="border-t border-[#313244] py-4 text-center text-xs text-[#6c7086] font-mono">
-        TierCraft: Modern local-first tier list maker. Zero em-dashes, zero cloud lock-in.
+      <footer className="border-t border-[#313244] py-4 text-center text-xs text-[#6c7086] font-mono flex items-center justify-center gap-2">
+        <span>TierCraft</span>
+        <span>•</span>
+        <span>Created by <a href="https://github.com/samshady" target="_blank" rel="noopener noreferrer" className="text-[#cba6f7] hover:underline font-semibold">Sam Shady</a></span>
       </footer>
+
     </div>
   );
 };

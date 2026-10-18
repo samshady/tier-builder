@@ -50,6 +50,9 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="font-mono text-[11px] text-[#cba6f7] font-semibold uppercase tracking-wider">
                 TierCraft
               </span>
+              <span className="text-[10px] font-mono text-[#cba6f7] bg-[#cba6f7]/10 px-1.5 py-0.5 rounded border border-[#cba6f7]/20">
+                by Sam Shady
+              </span>
               <span className="text-[#6c7086] text-xs">/</span>
               {isEditingTitle ? (
                 <input
@@ -79,8 +82,9 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
             <p className="text-xs text-[#a6adc8] hidden sm:block">
-              Drag cards to rank. High-res export, local IndexedDB storage, zero server tracking.
+              Rank and organize favorites with custom tiers, 1v1 gauntlet choices, and Retina exports.
             </p>
+
           </div>
         </div>
 

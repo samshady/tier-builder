@@ -9,6 +9,7 @@ import { compressImageFile } from '../utils/image';
 interface UnrankedPoolProps {
   items: TierItem[];
   onAddTextItem: (title: string, tag?: string, color?: string) => void;
+  onAddTextItems?: (titles: string[]) => void;
   onAddImageItems: (images: { title: string; imageUrl: string }[]) => void;
   onShufflePool: () => void;
   onClearPool: () => void;
@@ -19,12 +20,14 @@ interface UnrankedPoolProps {
 export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
   items,
   onAddTextItem,
+  onAddTextItems,
   onAddImageItems,
   onShufflePool,
   onClearPool,
   onDeleteItem,
   onStartGauntlet,
 }) => {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [quickAddInput, setQuickAddInput] = useState('');
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -127,13 +130,20 @@ export const UnrankedPool: React.FC<UnrankedPoolProps> = ({
       .map((l) => l.trim())
       .filter(Boolean);
 
-    lines.forEach((line) => {
-      onAddTextItem(line);
-    });
+    if (lines.length === 0) return;
+
+    if (onAddTextItems) {
+      onAddTextItems(lines);
+    } else {
+      lines.forEach((line) => {
+        onAddTextItem(line);
+      });
+    }
 
     setBatchText('');
     setShowBatchModal(false);
   };
+
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
